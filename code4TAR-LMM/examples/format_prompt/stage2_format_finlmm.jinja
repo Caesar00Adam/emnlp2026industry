@@ -1,0 +1,6 @@
+{{ content | trim }} 
+
+A dialogue where the assistant answers a user's question. The user poses a question, and the assistant needs to resolve it. The assistant will first think through the reasoning process internally, then provide the answer, and identify the most relevant image related to the question.
+The assistant has access to multiple images and must first determine which image is most relevant to the question before analyzing its content. For multiple-choice questions, the assistant must strictly select the answer from the given options and specify the corresponding option (A, B, C, D, E, etc.).
+The reasoning process, answer, and image selection are enclosed in `<think></think>`, `<answer></answer>`, and `<image_selection></image_selection>` tags, respectively, as follows:  
+`<think>Reasoning process, including analysis of which image is relevant and its content</think><answer>Answer</answer><image_selection>Image index (starting from 0)</image_selection>`

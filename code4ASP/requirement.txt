@@ -1,0 +1,6 @@
+python>=3.9
+PyMuPDF==1.24.10
+pdfplumber==0.11.2
+openai==1.67.0
+transformers==4.48.0
+qwen-vl-utils==0.0.10

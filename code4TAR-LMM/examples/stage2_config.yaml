@@ -1,0 +1,107 @@
+data:
+  train_files: geometry3k@train
+  val_files: geometry3k@test
+  prompt_key: problem
+  answer_key: answer
+  image_key: images
+  image_selection_key: image_selection  
+  max_prompt_length: 10240  
+  max_response_length: 2048
+  rollout_batch_size: 320
+  val_batch_size: 210
+  format_prompt: ./examples/format_prompt/stage2_format_finlmm.jinja 
+  seed: 1
+  max_pixels: 737280
+  min_pixels: 262144
+  filter_overlong_prompts: true
+
+algorithm:
+  adv_estimator: grpo
+  disable_kl: false
+  use_kl_loss: true
+  kl_penalty: low_var_kl
+  kl_coef: 1.0e-2
+
+worker:
+  actor:
+    global_batch_size: 160
+    micro_batch_size_per_device_for_update: 4
+    micro_batch_size_per_device_for_experience: 20
+    max_grad_norm: 1.0
+    padding_free: true
+    ulysses_sequence_parallel_size: 1
+    model:
+      model_path: Qwen/Qwen3-VL-2B-thinking
+      enable_gradient_checkpointing: true
+      trust_remote_code: false
+      freeze_vision_tower: false
+    optim:
+      lr: 1.0e-6
+      weight_decay: 1.0e-2
+      strategy: adamw_bf16  
+      lr_warmup_ratio: 0.0
+    fsdp:
+      enable_full_shard: false
+      enable_cpu_offload: false
+      enable_rank0_init: false
+    offload:
+      offload_params: false  
+      offload_optimizer: false  
+
+  rollout:
+    n: 16
+    temperature: 1.0
+    top_p: 0.99
+    gpu_memory_utilization: 0.4
+    enforce_eager: false
+    enable_chunked_prefill: false
+    tensor_parallel_size: 2
+    limit_images: 0  
+    max_model_len: 12288  
+    max_num_batched_tokens: 12288
+    val_override_config:
+      temperature: 0.5
+      n: 1
+
+  ref:
+    fsdp:
+      enable_full_shard: false
+      enable_cpu_offload: true  
+      enable_rank0_init: false
+    offload:
+      offload_params: false
+
+  reward:
+    reward_type: function
+    score_function: ./examples/score_function/sf_with_image_selection_bert.py:compute_score
+
+    score_function_kwargs:
+      image_selection_index: "image_selection"  
+      format_weight: 0.1
+      accuracy_weight: 0.5
+      image_selection_weight: 0.2
+
+    use_bert_reward: true  
+    bert_reward_weight: 0.15  
+    bert_model_name: fin_bert 
+    bert_checkpoint_dir: bert_reward_model_test  
+    bert_training_epochs: 1  
+    bert_batch_size: 128  
+    bert_learning_rate: 5e-6  
+    bert_train_interval: 10 
+
+trainer:
+  total_episodes: 1
+  logger: ["console", "wandb"]
+  project_name: easy_r1
+  experiment_name: qwen3_vl_2b_geo_grpo_bert_image_selection
+  n_gpus_per_node: 8
+  nnodes: 1
+  val_freq: 5  
+  val_before_train: true
+  val_only: true
+  val_generations_to_log: 20
+  save_freq: 5  
+  save_limit: 4  
+  save_checkpoint_path: null
+  load_checkpoint_path: null 
